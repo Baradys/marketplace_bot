@@ -1,0 +1,10 @@
+{
+    "errors": [
+        "productIds should not be empty"
+    ],
+    "traceId": "55f59b1da4580a34",
+    "errorData": null,
+    "statusCode": 400,
+    "source": "BFF",
+    "externalUrl": null
+}
