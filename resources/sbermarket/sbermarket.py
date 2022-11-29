@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 
 
-def get_data(search, user_id=None):
+def get_data_sbermarket(search, user_id=None):
     items_result = []
     url = f'https://sbermegamarket.ru/catalog/?q={search}#?filters=%7B"4CB2C27EAAFC4EB39378C4B7487E6C9E"%3A%5B"1"%5D%7D'
     with webdriver.Chrome() as browser:
@@ -42,12 +42,12 @@ def get_data(search, user_id=None):
                         {
                             'item_name': item_name,
                             'item_price': item_price,
-                            'old_price': old_price,
-                            'discount': discount,
-                            'url': item_url,
+                            'item_old_price': old_price,
+                            'item_discount': discount,
+                            'item_url': item_url,
                         }
                     )
-    items_result = sorted(items_result, key=(lambda x: x['discount']), reverse=True)
+    items_result = sorted(items_result, key=(lambda x: x['item_discount']), reverse=True)
     if not os.path.exists('data'):
         os.mkdir('data')
     with open(f'data/sbermarket-{user_id}.json', 'w', encoding='utf-8') as file:
@@ -56,7 +56,7 @@ def get_data(search, user_id=None):
 
 def main():
     search_data = '%20'.join(input('Поиск: ').split())
-    get_data(search_data)
+    get_data_sbermarket(search_data)
 
 
 if __name__ == '__main__':

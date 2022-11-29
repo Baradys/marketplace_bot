@@ -4,10 +4,8 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 def main_menu_keyboard():
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
     last_attempt = KeyboardButton(text='Получить предыдущий запрос')
-    help_button = KeyboardButton(text='Справка')
-    description_button = KeyboardButton(text='Описание')
     search_button = KeyboardButton(text='Выбрать ресурс для поиска')
-    keyboard.add(last_attempt).add(description_button, help_button).add(search_button)
+    keyboard.add(last_attempt).add(search_button)
     return keyboard
 
 

@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.dispatcher.filters import Text
@@ -13,7 +14,8 @@ from keyboards import main_menu_keyboard, resource_keyboard
 
 from dotenv import load_dotenv
 
-from resources.sbermarket.sbermarket import get_data
+from resources.sbermarket.sbermarket import get_data_sbermarket
+from resources.dns.dns import get_data_dns
 
 load_dotenv()
 
@@ -31,37 +33,13 @@ async def on_startup(_):
 class Form(StatesGroup):
     resource = State()
     search = State()
-
-
-HELP_COMMAND = '''
-<b>/start</b> - <em>Запускает бота</em>
-<b>/help</b> - <em>Помощь</em>
-<b>/description</b> - <em>Описание</em>
-<b>/photo</b> - <em>Выбрать случайное фото</em>
-<b>/location</b> - <em>Получить случайную локацию</em>
-'''
-
-DESCRIPTION_COMMAND = '''
-Этот бот умеет искать информацию на различных торговых площадках
-'''
+    page = State()
 
 
 @dp.message_handler(commands='start')
 async def start_command(message: types.Message):
     await message.answer(f'<b>Добро пожаловать!</b>\nЭтот бот позволит найти интересующее Вас товары на СберМаркете со скидкой!',
                          reply_markup=main_menu_keyboard())
-    await message.delete()
-
-
-@dp.message_handler(Text(equals='Описание'))
-async def start_command(message: types.Message):
-    await message.answer(DESCRIPTION_COMMAND)
-    await message.delete()
-
-
-@dp.message_handler(Text(equals='Справка'))
-async def start_command(message: types.Message):
-    await message.answer(HELP_COMMAND)
     await message.delete()
 
 
@@ -89,15 +67,25 @@ async def get_resource(callback: types.CallbackQuery, state: FSMContext):
 @dp.message_handler(state=Form.search)
 async def get_discount_search(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['search'] = message.text
+        data['search'] = message.text.strip()
+        resource = data['resource']
     await message.answer('Идет поиск. Примерное время ожидания: 30 секунд\nОжидайте...')
-    get_data(message.text, message.from_user.id)
-    with open(f'data/sbermarket-{message.from_user["id"]}.json', encoding='utf-8') as file:
+    if resource == 'dns':
+        get_data_dns(message.text, message.from_user.id)
+    elif resource == 'sbermarket':
+        get_data_sbermarket(message.text, message.from_user.id)
+    with open(f'data/{resource}-{message.from_user["id"]}.json', encoding='utf-8') as file:
         data = json.load(file)
-    for item in data[:6]:
-        card = f'{hlink(item.get("item_name"), item.get("url"))}\n' \
-               f'{hbold("Старая цена:")} {item.get("old_price")}\n' \
-               f'{hbold("Новая цена")} (-{item.get("discount")}%): {item.get("item_price")}\n'
+    for item in data[10]:
+        item_name = item.get("item_name")
+        item_price = item.get("item_price")
+        item_url = item.get("item_url")
+        item_discount = item.get("item_discount")
+        item_old_price = item.get("item_old_price")
+        card = f'{hlink(item_name, item_url)}\n' \
+               f'{hbold("Цена:")} {item_price} ₽\n'
+        if item_discount and item_old_price:
+            card += f'{hbold("Скидка:")} -{item_discount}% (Старая цена: {item_old_price} ₽)'
         await message.answer(card)
     await state.finish()
     await bot.send_message(message.from_user.id, 'Поиск завершен!', reply_markup=main_menu_keyboard())
